@@ -2,6 +2,8 @@ use std::{
     fs,
     io::{prelude::*, BufReader},
     net::{TcpListener,TcpStream},
+    thread,
+    time::Duration,
 };
 
 fn main(){
@@ -40,6 +42,20 @@ fn handle_connection(mut stream: TcpStream){
 
         stream.write_all(response.as_bytes()).unwrap();
     }
+
+    // Web Server ko'p tarmoqli qilish 
+    // Server hamma so'rovlarga javob berishi uchun kod yozamiz
+    // 2 ta brazuzer oyna oching va bittasiga 127.0.0.1:7878 keyingisiga 127.0.0.1:7878/sleep ni yozing
+    // 2 chisini brazuer oynasini refresh bering server 5 soniyaga to'xtagani ko'rasiz
+
+    let (status_line, filename) = match &request_line[..]{
+        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
+        "GET /sleep HTTP/1.1" => {
+            thread::sleep(Duration::from_secs(5));
+            ("HTTP/1.1 200 OK", "hello.html")
+        }
+        _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
+    };
     // let http_request: Vec<_> = buf_reader
     //     .lines()
     //     .map(|result| result.unwrap())
