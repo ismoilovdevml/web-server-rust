@@ -11,7 +11,7 @@ use web_server_rust::ThreadPool;
 fn main(){
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
     // cheklangan ip yozamiz so'rovga javob berish uchun
-    let pool = ThreadPool::new(4)
+    let pool = ThreadPool::new(4);
 
     for stream in listener.incoming(){
         let stream = stream.unwrap();
