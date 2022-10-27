@@ -1,11 +1,11 @@
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
-}
+};
 
 pub struct ThreadPool{
     workers: Vec<Worker>,
-    sender: mpsc::sender<Job>
+    sender: mpsc::Sender<Job>,
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
@@ -31,20 +31,37 @@ impl ThreadPool {
     {
         let job = Box::new(f);
 
-        self.sender.send(job),unwrap();
+        self.sender.send(job).unwrap();
     }
 }
 struct Worker {
     id: usize,
-    thread: thread::JoinHandle<()>,
+    thread: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
-        let thread = thread::spawn(|| {
-            receiver;
+        let thread = thread::spawn(move || loop {
+            let job = receiver.lock().unwrap().recv().unwrap();
+
+            println!("Worker {id} got a job; executing.");
+
+            job();
         });
 
-        Worker {id, thread}
+        Worker {
+            id,
+            thread: Some(thread),
+        }
+    }
+}
+
+impl Drop for ThreadPool {
+    fn drop(&mut self){
+        for worker in &mut self.workers{
+            println!("Ishchini o'chirish {}", worker.id);
+
+            worker.thread.join().unwrap();
+        }
     }
 }
