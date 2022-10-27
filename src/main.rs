@@ -1,32 +1,26 @@
-use std::{
-    fs,
-    io::{prelude::*, BufReader},
-    net::{TcpListener,TcpStream},
-    thread,
-    time::Duration,
-};
-
 use web_server_rust::ThreadPool;
+use std::fs;
+use std::io::prelude::*;
+use std::net::TcpListener;
+use std::net::TcpStream;
+use std::io::BufReader;
+use std::thread;
+use std::time::Duration;
 
 fn main(){
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
     // cheklangan ip yozamiz so'rovga javob berish uchun
-    let pool = ThreadPool::new(4);
+    let pool = ThreadPool::new(10);
 
-    for stream in listener.incoming(){
+    for stream in listener.incoming().take(5){
         let stream = stream.unwrap();
-// har bir so'rov uchun javob beruvchi ip yozamiz
-// har bir so'rovga bitta ip javo beradi so'rovlar ko'paysa server qotadi
 
-        // thread::spawn(||{
-        //     handle_connection(stream);
-        // });
-
-//buni to'grilaymiz cheklangan ip yozamiz
-            pool.execute(||{
-                handle_connection(stream);
-            })
+        pool.execute(|| {
+            handle_connection(stream);
+        });
     }
+
+    println!("Oʻchirish.")
 }
 
 fn handle_connection(mut stream: TcpStream){
@@ -69,22 +63,4 @@ fn handle_connection(mut stream: TcpStream){
         }
         _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
     };
-    // let http_request: Vec<_> = buf_reader
-    //     .lines()
-    //     .map(|result| result.unwrap())
-    //     .take_while(|line| !line.is_empty())
-    //     .collect();
-
-
-    // let response = "HTTP/1.1 200 OK\r\n\r\n";
-    // stream.write_all(response.as_bytes()).unwrap();
-    // let status_line = "HTTP/1.1 200 OK";
-    // let contents = fs::read_to_string("hello.html").unwrap();
-    // let lenght = contents.len();
-
-    // let response =
-    //     format!("{status_line}\r\nContent-lenght: {lenght}\r\n\r\n{contents}");
-    // stream.write_all(response.as_bytes()).unwrap();
-
-
 }

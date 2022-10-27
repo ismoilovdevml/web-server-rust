@@ -5,7 +5,7 @@ use std::{
 
 pub struct ThreadPool{
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Job>,
+    sender: Option<mpsc::Sender<Job>>,
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
@@ -23,7 +23,10 @@ impl ThreadPool {
         for id in 0..size{
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
-        ThreadPool { workers, sender }
+        ThreadPool {
+            workers,
+            sender: Some(sender),
+        }
     }
     pub fn execute<F>(&self, f: F)
     where
@@ -31,7 +34,7 @@ impl ThreadPool {
     {
         let job = Box::new(f);
 
-        self.sender.send(job).unwrap();
+        self.sender.as_ref().unwrap().send(job).unwrap();
     }
 }
 struct Worker {
@@ -42,11 +45,17 @@ struct Worker {
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || loop {
-            let job = receiver.lock().unwrap().recv().unwrap();
+            match receiver.lock().unwrap().recv(){
+                Ok(job) => {
+                    println!("Ishchi {id} ishlay boshladi; executing.");
 
-            println!("Worker {id} got a job; executing.");
-
-            job();
+                    job();
+                }
+                Err(_) => {
+                    println!("Ishchi {id} uzildi; yopildi");
+                    break;
+                }
+            }
         });
 
         Worker {
@@ -61,7 +70,9 @@ impl Drop for ThreadPool {
         for worker in &mut self.workers{
             println!("Ishchini o'chirish {}", worker.id);
 
-            worker.thread.join().unwrap();
+            if let Some(thread) = worker.thread.take(){
+                thread.join().unwrap();
+            }
         }
     }
 }
