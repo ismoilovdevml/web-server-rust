@@ -1,5 +1,10 @@
 # Web Server
-Rust dasturlash tilida yozilgan Ko'p tarmoqli veb-server
+Rust dasturlash tilida yozilgan Ko'p tarmoqli veb-server <br>
+
+![alt text](https://github.com/ismoilovdevml/web-server-rust/blob/master/assets/1-server.png)
+![alt text](https://github.com/ismoilovdevml/web-server-rust/blob/master/assets/2-server.png)
+![alt text](https://github.com/ismoilovdevml/web-server-rust/blob/master/assets/3-server.png)
+
 Serverni ishga tushirish
 Loyihani klon qilib oling
 ```bash
