@@ -29,7 +29,7 @@ fn handle_connection(mut stream: TcpStream){
 
     if request_line == "GET / HTTP/1.1" {
         let status_line = "HTTP/1.1 200 OK";
-        let contents = fs::read_to_string("hello.html").unwrap();
+        let contents = fs::read_to_string("index.html").unwrap();
         let lenght = contents.len();
 
         let response = format!(
@@ -56,10 +56,10 @@ fn handle_connection(mut stream: TcpStream){
     // 2 chisini brazuer oynasini refresh bering server 5 soniyaga to'xtagani ko'rasiz
 
     let (status_line, filename) = match &request_line[..]{
-        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "hello.html"),
+        "GET / HTTP/1.1" => ("HTTP/1.1 200 OK", "index.html"),
         "GET /sleep HTTP/1.1" => {
             thread::sleep(Duration::from_secs(5));
-            ("HTTP/1.1 200 OK", "hello.html")
+            ("HTTP/1.1 200 OK", "index.html")
         }
         _ => ("HTTP/1.1 404 NOT FOUND", "404.html"),
     };
