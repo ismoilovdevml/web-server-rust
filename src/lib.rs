@@ -3,7 +3,7 @@ use std::{
     thread,
 };
 
-pub struct ThreadPool{
+pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: Option<mpsc::Sender<Job>>,
 }
@@ -20,14 +20,16 @@ impl ThreadPool {
 
         let mut workers = Vec::with_capacity(size);
 
-        for id in 0..size{
+        for id in 0..size {
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
+
         ThreadPool {
             workers,
             sender: Some(sender),
         }
     }
+
     pub fn execute<F>(&self, f: F)
     where
         F: FnOnce() + Send + 'static,
@@ -37,6 +39,21 @@ impl ThreadPool {
         self.sender.as_ref().unwrap().send(job).unwrap();
     }
 }
+
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        drop(self.sender.take());
+
+        for worker in &mut self.workers {
+            println!("{} - Ishchi o'chirildi", worker.id);
+
+            if let Some(thread) = worker.thread.take() {
+                thread.join().unwrap();
+            }
+        }
+    }
+}
+
 struct Worker {
     id: usize,
     thread: Option<thread::JoinHandle<()>>,
@@ -45,14 +62,16 @@ struct Worker {
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
         let thread = thread::spawn(move || loop {
-            match receiver.lock().unwrap().recv(){
+            let message = receiver.lock().unwrap().recv();
+
+            match message {
                 Ok(job) => {
-                    println!("Ishchi {id} ishlay boshladi; executing.");
+                    println!("{id} - Ishchi ishlay boshladi; executing.");
 
                     job();
                 }
                 Err(_) => {
-                    println!("Ishchi {id} uzildi; yopildi");
+                    println!("{id} - Ishchi uzildi; yopildi");
                     break;
                 }
             }
@@ -61,18 +80,6 @@ impl Worker {
         Worker {
             id,
             thread: Some(thread),
-        }
-    }
-}
-
-impl Drop for ThreadPool {
-    fn drop(&mut self){
-        for worker in &mut self.workers{
-            println!("Ishchini o'chirish {}", worker.id);
-
-            if let Some(thread) = worker.thread.take(){
-                thread.join().unwrap();
-            }
         }
     }
 }
